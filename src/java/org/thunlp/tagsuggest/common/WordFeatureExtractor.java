@@ -47,6 +47,8 @@ public class WordFeatureExtractor implements FeatureExtractor {
 	int lang = -1;
 	private static Pattern bracesRE = Pattern.compile("[{}]+");
 	private static String Chinese_stopword_path = new String();
+//	private static String project_path = "/home/tang/Documents/THUTag/demo" ;
+     private static String project_path = RtuMain.getProjectPath();
 	
 
 	private HashSet<String> tagPossibleSet = new HashSet<String>();
@@ -59,7 +61,13 @@ public class WordFeatureExtractor implements FeatureExtractor {
 	public void setTagPossibleSet(HashSet<String> tagPossibleSet) {
 		this.tagPossibleSet = tagPossibleSet;
 	}
-	
+
+	/*
+	* @param input input file path
+	* @param worlex output lexicon
+	* @param taglex output lexicon
+	* @param config input configuration
+	*/
 	public static void buildLexicons(String input, Lexicon wordlex,
 			Lexicon taglex, Properties config) throws IOException {
 
@@ -203,13 +211,13 @@ public class WordFeatureExtractor implements FeatureExtractor {
 					String[] features = extractor.extractKeyword(p, true, true,
 							true);
 					localWordLex.addDocument(features);
+					// filtered 被传进去之后首先会清除里面的内容
 					tagFilter.filterWithNorm(p.getTags(), filtered);
-					taglex.addDocument(filtered
-							.toArray(new String[filtered.size()]));
+					taglex.addDocument(filtered.toArray(new String[filtered.size()]));
 					if (reader.numRead() % 1000 == 0)
 						LOG.info("building lexicons: " + reader.numRead());
 					if (reader.numRead() % 5000 == 0 && useBigram) {
-						LOG.info("trim lexicion");
+						LOG.info("trim lexicon");
 						localWordLex = localWordLex.removeLowDfWords(5);
 						LOG.info("building lexicons: " + reader.numRead());
 					}
@@ -217,6 +225,7 @@ public class WordFeatureExtractor implements FeatureExtractor {
 				reader.close();
 			}
 		}
+		// TODO Check why should we save and load same file here
 		LOG.info("Saving lexicons to cache files");
 		localWordLex.saveToFile(cachedWordLexFile);
 		wordlex.loadFromFile(cachedWordLexFile);
@@ -255,7 +264,7 @@ public class WordFeatureExtractor implements FeatureExtractor {
 		stopwords.add("制片");
 		
 		try {
-			String stopWordsFile = jar_path.getProjectPath() + File.separator + "chinese_stop_word.txt"; 
+			String stopWordsFile = project_path + File.separator + "chinese_stop_word.txt"; 
 			
 			BufferedReader stop = new BufferedReader(
 					new InputStreamReader(
@@ -292,7 +301,7 @@ public class WordFeatureExtractor implements FeatureExtractor {
 		try {
 			String stopWordsFile = config
 					.getProperty("model",
-							 jar_path.getProjectPath()) + File.separator +"chinese_stop_word.txt";
+							 project_path) + File.separator +"chinese_stop_word.txt";
 	
 			LOG.info(stopWordsFile);
 		
@@ -317,7 +326,7 @@ public class WordFeatureExtractor implements FeatureExtractor {
 								"wordsegment.automata.file",
 								config
 										.getProperty("model",
-												 jar_path.getProjectPath()) + File.separator + "book.model");
+												 project_path) + File.separator + "book.model");
 
 			}
 			ws = new ForwardMaxWordSegment();
@@ -447,6 +456,7 @@ public class WordFeatureExtractor implements FeatureExtractor {
 		content = LangUtils.removePunctuationMarks(content);
 		content = LangUtils.removeLineEnds(content);
 		content = LangUtils.removeExtraSpaces(content);
+		content = LangUtils.removeEmptyLines(content);
 		content = content.toLowerCase();
 		String[] words = ws.segment(content);
 

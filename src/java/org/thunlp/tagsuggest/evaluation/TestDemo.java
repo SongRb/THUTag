@@ -23,68 +23,70 @@ import org.thunlp.tagsuggest.common.KeywordPost;
 import org.thunlp.tagsuggest.common.TagSuggest;
 import org.thunlp.tool.GenericTool;
 
-public class TestDemo  implements GenericTool{
-	  TagSuggest suggester = null;
-		private static Logger LOG = Logger.getAnonymousLogger();
+public class TestDemo implements GenericTool {
+    TagSuggest suggester = null;
+    private static Logger LOG = Logger.getAnonymousLogger();
 
-	 public void run(String[] args) throws Exception {
-		   
-		  	Flags flags = new Flags();
-		    flags.add("algorithm");
-		    flags.add("model_path");
-		    flags.add("config");
-		    flags.add("article_path");
-		    flags.add("output_path");
-		    flags.parseAndCheck(args);
+    public void run(String[] args) throws Exception {
 
-		    Properties config = ConfigIO.configFromString(flags.getString("config"));
-		    suggester = loadTagSuggester(
-		        flags.getString("algorithm"), flags.getString("model_path"));
-		    suggester.setConfig(config);
-		    
-		    doSuggest(flags.getString("article_path"),flags.getString("output_path"));
-	 }
-	  private TagSuggest loadTagSuggester(String name, String modelPath) 
-			  throws Exception {
-			    if (!name.startsWith("org")) {
-			      name = "org.thunlp.tagsuggest.contentbase." + name;
-			    }
-			    TagSuggest ts = (TagSuggest) Class.forName(name).newInstance();
-			    ts.loadModel(modelPath);
-			    return ts;
-			  }
-			  
-	public void doSuggest(String article_path,String output_path)  throws IOException{
+        Flags flags = new Flags();
+        flags.add("algorithm");
+        flags.add("model_path");
+        flags.add("config");
+        flags.add("article_path");
+        flags.add("output_path");
+        flags.parseAndCheck(args);
 
-			BufferedReader reader = new BufferedReader(
-				new InputStreamReader(
-						new FileInputStream(
-								article_path),
-						"UTF-8"));
-		
-			String title = reader.readLine();
-			String content = reader.readLine();
-			
-		    KeywordPost p = new KeywordPost();     //a trick that avoid error in extract  KeywordPost
-		    p.setTitle(title);
-		    p.setSummary("");
-		    p.setContent(content);
+        Properties config = ConfigIO.configFromString(flags.getString("config"));
+        suggester = loadTagSuggester(
+                flags.getString("algorithm"), flags.getString("model_path"));
+        suggester.setConfig(config);
 
-		    StringBuilder explain = new StringBuilder();
-		    List<WeightString> tags = suggester.suggest(p, explain);
-		    
-		    BufferedWriter outTag = new BufferedWriter(new OutputStreamWriter(
-					new FileOutputStream(output_path),
-					"UTF-8"));
-			int cnt =  0;
-		    for (WeightString ws : tags) {
-		    	outTag.write(ws.text + " " + ws.weight);
-		    	LOG.info(ws.text + " " + ws.weight);
-		    	++ cnt;
-		    	if (cnt>10) break;
-		    	outTag.newLine();
-			    outTag.flush();    
-		    }
-		}
+        doSuggest(flags.getString("article_path"), flags.getString("output_path"));
+    }
+
+    private TagSuggest loadTagSuggester(String name, String modelPath)
+            throws Exception {
+        if (!name.startsWith("org")) {
+            name = "org.thunlp.tagsuggest.contentbase." + name;
+        }
+        TagSuggest ts = (TagSuggest) Class.forName(name).newInstance();
+        ts.loadModel(modelPath);
+        return ts;
+    }
+
+    public void doSuggest(String article_path, String output_path) throws IOException {
+
+        BufferedReader reader = new BufferedReader(
+                new InputStreamReader(
+                        new FileInputStream(
+                                article_path),
+                        "UTF-8"));
+
+        String title = reader.readLine();
+        String content = reader.readLine();
+
+        KeywordPost p = new KeywordPost();     //a trick that avoid error in extract  KeywordPost
+        p.setTitle(title);
+        p.setSummary("");
+        p.setContent(content);
+
+        StringBuilder explain = new StringBuilder();
+        List<WeightString> tags = suggester.suggest(p, explain);
+
+        BufferedWriter outTag = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(output_path),
+                "UTF-8"));
+        int cnt = 0;
+        LOG.info("Size: "+Integer.toString(tags.size()));
+        for (WeightString ws : tags) {
+            outTag.write(ws.text + " " + ws.weight);
+            LOG.info(ws.text + " " + ws.weight);
+            ++cnt;
+//            if (cnt > 10) break;
+            outTag.newLine();
+            outTag.flush();
+        }
+    }
 
 }

@@ -44,6 +44,10 @@ public class TagFilter {
 		}
 	}
 
+	/*
+	* @param tags tags of one article
+	* @param filtered value to write
+	*/
 	public void filterWithNorm(Set<String> tags, Set<String> filtered) {
 		filtered.clear();
 		for (String tag : tags) {
