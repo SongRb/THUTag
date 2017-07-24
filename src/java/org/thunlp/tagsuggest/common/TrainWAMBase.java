@@ -4,6 +4,7 @@ import org.thunlp.io.JsonUtil;
 import org.thunlp.io.RecordReader;
 import org.thunlp.language.chinese.ForwardMaxWordSegment;
 import org.thunlp.language.chinese.WordSegment;
+import org.thunlp.misc.Counter;
 import org.thunlp.misc.Flags;
 import org.thunlp.text.Lexicon;
 import org.thunlp.tool.GenericTool;
@@ -72,7 +73,7 @@ public class TrainWAMBase implements GenericTool, ModelTrainer {
             double scoreLimit = Double.parseDouble(config.getProperty("scoreLimit", "0.1"));
 
             // the second time :
-            createTrainData(input, modelDir, localWordLex,localTagLex, scoreLimit);
+            createTrainData(input, modelDir, localWordLex, localTagLex, scoreLimit);
 
             // training
             gizappTrain(modelDir);
@@ -96,10 +97,10 @@ public class TrainWAMBase implements GenericTool, ModelTrainer {
         tagFilter = new TagFilter(config, tagLex);
     }
 
-    protected void createTrainData(String input, File modelDir, Lexicon localWordLex, Lexicon localTagLex, double scoreLimit) throws IOException {
+    protected void createTrainData(String input, File modelDir, Lexicon wordLex, Lexicon tagLex, double scoreLimit) throws IOException {
     }
 
-    protected void createLocalLex(Lexicon localWordLex, Lexicon localTagLex, File modelDir, String input) throws IOException {
+    protected void createLocalLex(Lexicon wordLex, Lexicon tagLex, File modelDir, String input) throws IOException {
         File wordLexFile = new File(modelDir.getAbsolutePath() + "/wordlex");
         File tagLexFile = new File(modelDir.getAbsolutePath() + "/taglex");
 
@@ -107,8 +108,8 @@ public class TrainWAMBase implements GenericTool, ModelTrainer {
 
         if (wordLexFile.exists() && tagLexFile.exists()) {
             LOG.info("Use cached lexicons");
-            localWordLex.loadFromFile(wordLexFile);
-            localTagLex.loadFromFile(tagLexFile);
+            wordLex.loadFromFile(wordLexFile);
+            tagLex.loadFromFile(tagLexFile);
         } else {
             while (reader.next()) {
                 KeywordPost p = J.fromJson(reader.value(), KeywordPost.class);
@@ -126,8 +127,8 @@ public class TrainWAMBase implements GenericTool, ModelTrainer {
                 if (filtered == null) {
                     continue;
                 }
-                localWordLex.addDocument(features);
-                localTagLex.addDocument(filtered
+                wordLex.addDocument(features);
+                tagLex.addDocument(filtered
                         .toArray(new String[filtered.size()]));
 
                 if (reader.numRead() % 1000 == 0)
@@ -135,8 +136,8 @@ public class TrainWAMBase implements GenericTool, ModelTrainer {
                             + " building lexicons: " + reader.numRead());
             }
             reader.close();
-            localWordLex.saveToFile(wordLexFile);
-            localTagLex.saveToFile(tagLexFile);
+            wordLex.saveToFile(wordLexFile);
+            tagLex.saveToFile(tagLexFile);
         }
 
 
@@ -144,7 +145,7 @@ public class TrainWAMBase implements GenericTool, ModelTrainer {
 
     protected void gizappTrain(File modelDir) throws IOException, InterruptedException {
         Runtime rn = Runtime.getRuntime();
-        Process p = null;
+        Process p;
         p = rn
                 .exec(giza_path + File.separator + "mkcls -c80 -pbook -Vbook.vcb.classes opt",
                         null, modelDir);
@@ -207,46 +208,74 @@ public class TrainWAMBase implements GenericTool, ModelTrainer {
         bufferedWriter.flush();
     }
 
-    protected void writeRandomResultLines(BufferedWriter outTag, Random random, int wordnum, Vector<String> tagList, Vector<Double> tagProb) throws IOException {
-        writeRandomResultLine(outTag, random, wordnum, tagList, tagProb);
-        outTag.newLine();
-        outTag.flush();
+    protected void writeRandomResultLines(BufferedWriter bufferedWriter, Random random, int wordnum, Vector<String> tagList, Vector<Double> tagProb) throws IOException {
+        writeRandomResultLine(bufferedWriter, random, wordnum, tagList, tagProb);
+        bufferedWriter.newLine();
+        bufferedWriter.flush();
     }
 
-    private void writeRandomResultLine(BufferedWriter outTag, Random random, int wordnum, Vector<String> tagList, Vector<Double> tagProb) throws IOException {
-        for (int i = 0; i < wordnum; i++) {
-            double select = random.nextDouble();
+    private void writeRandomResultLine(BufferedWriter bufferedWriter, Random random, int length, Vector<String> wordList, Vector<Double> wordProb) throws IOException {
+        for (int i = 0; i < length; i++) {
+            double choice = random.nextDouble();
             double sum = 0.0;
-            int j = 0;
-            for (j = 0; j < tagProb.size(); j++) {
-                sum += tagProb.elementAt(j);
-                if (sum >= select)
+            int j;
+            for (j = 0; j < wordProb.size(); j++) {
+                sum += wordProb.elementAt(j);
+                if (sum >= choice)
                     break;
             }
-            String tag = tagList.elementAt(j);
+            String tag = wordList.elementAt(j);
             if (i == 0) {
-                outTag.write(tag);
+                bufferedWriter.write(tag);
             } else {
-                outTag.write(" " + tag);
+                bufferedWriter.write(" " + tag);
             }
         }
     }
 
-    protected double getTotalTfidf(Lexicon localWordlex, String[] tags, Iterator<Map.Entry<String, Long>> iter, Vector<Double> tagTfidf, Vector<String> tagList) {
+    protected double getTotalTfidf(Lexicon localWordlex, String[] words, Counter<String> wordCounter, Vector<Double> wordTfidf, Vector<String> wordList, boolean inLex, boolean doubleNormal) {
         double totalTfidf = 0.0;
-        while (iter.hasNext()) {
-            Map.Entry<String, Long> e = iter.next();
-            String tag = e.getKey();
-            tagList.add(tag);
+        for (Map.Entry<String, Long> e : wordCounter) {
+            String word = e.getKey();
+            if (inLex && localWordlex.getWord(word) == null) {
+                continue;
+            }
+
+            wordList.add(word);
             double tf = ((double) e.getValue())
-                    / ((double) tags.length);
+                    / ((double) words.length);
             double idf = Math.log(((double) localWordlex.getNumDocs())
-                    / ((double) localWordlex.getWord(tag)
+                    / ((double) localWordlex.getWord(word)
                     .getDocumentFrequency()));
-            tagTfidf.add(tf * idf);
-            totalTfidf += tf * idf;
+            double tfidf = tf * idf;
+            wordTfidf.add(tfidf);
+
+            if (doubleNormal) {
+                totalTfidf += tfidf * tfidf;
+            } else {
+                totalTfidf += tfidf;
+            }
         }
         return totalTfidf;
+    }
+
+    protected double calTFIDFTimes(Lexicon lex, Counter<String> wordCounter, HashMap<String, Double> wordTfidf, String[] words) {
+        double normalize;
+        normalize = 0.0;
+        for (Map.Entry<String, Long> e : wordCounter) {
+            String word = e.getKey();
+            if (lex.getWord(word) == null) {
+                continue;
+            }
+            double tf = ((double) e.getValue()) / ((double) words.length);
+            double idf = Math.log(((double) lex.getNumDocs())
+                    / ((double) lex.getWord(word)
+                    .getDocumentFrequency()));
+            double tfidf = tf * idf;
+            wordTfidf.put(word, tfidf);
+            normalize += tfidf * tfidf;
+        }
+        return normalize;
     }
 
 

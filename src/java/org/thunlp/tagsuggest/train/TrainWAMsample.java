@@ -1,20 +1,17 @@
 package org.thunlp.tagsuggest.train;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.*;
-import java.util.Map.Entry;
-
 import org.thunlp.io.RecordReader;
 import org.thunlp.misc.Counter;
-import org.thunlp.tagsuggest.common.*;
+import org.thunlp.tagsuggest.common.KeywordPost;
+import org.thunlp.tagsuggest.common.TrainWAMBase;
 import org.thunlp.text.Lexicon;
 
+import java.io.*;
+import java.util.Random;
+import java.util.Vector;
+
 public class TrainWAMsample extends TrainWAMBase {
-    protected void createTrainData(String input, File modelDir, Lexicon localWordLex, Lexicon localTagLex, double scoreLimit) throws IOException {
+    protected void createTrainData(String input, File modelDir, Lexicon wordLex, Lexicon tagLex, double scoreLimit) throws IOException {
 
         BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream(modelDir.getAbsolutePath() + "/book"),
@@ -51,8 +48,8 @@ public class TrainWAMsample extends TrainWAMBase {
             for (String word : words) {
                 termFreq.inc(word, 1);
             }
-            Iterator<Entry<String, Long>> iter = termFreq.iterator();
-            double totalTfidf = getTotalTfidf(localWordLex, words, iter, wordTfidf, wordList);
+
+            double totalTfidf = getTotalTfidf(wordLex, words, termFreq, wordTfidf, wordList, false, false);
             Vector<Double> wordProb = new Vector<>();
             for (int i = 0; i < wordTfidf.size(); i++) {
                 wordProb.add(wordTfidf.elementAt(i) / totalTfidf);
@@ -60,16 +57,15 @@ public class TrainWAMsample extends TrainWAMBase {
 
             writeRandomResultLines(out, random, wordnum, wordList, wordProb);
 
-// sample the tags
+            // sample the tags
             Vector<Double> tagTfidf = new Vector<>();
             Vector<String> tagList = new Vector<>();
             Counter<String> tagTermFreq = new Counter<>();
             for (String tag : tags) {
                 tagTermFreq.inc(tag, 1);
             }
-            iter = tagTermFreq.iterator();
 
-            totalTfidf = getTotalTfidf(localWordLex, tags, iter, tagTfidf, tagList);
+            totalTfidf = getTotalTfidf(wordLex, tags, tagTermFreq, tagTfidf, tagList, false, false);
             Vector<Double> tagProb = new Vector<>();
             for (int i = 0; i < tagTfidf.size(); i++) {
                 tagProb.add(tagTfidf.elementAt(i) / totalTfidf);
@@ -81,8 +77,6 @@ public class TrainWAMsample extends TrainWAMBase {
         reader.close();
         out.close();
         outTag.close();
-
-
     }
 
     public static void main(String[] args) throws IOException {

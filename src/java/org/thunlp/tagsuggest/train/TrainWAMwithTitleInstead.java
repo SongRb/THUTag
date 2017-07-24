@@ -14,7 +14,7 @@ import java.util.Vector;
 
 
 public class TrainWAMwithTitleInstead extends TrainWAMBase {
-    protected void createTrainData(String input, File modelDir, Lexicon localWordLex, Lexicon localTagLex, double scoreLimit) throws IOException {
+    protected void createTrainData(String input, File modelDir, Lexicon wordLex, Lexicon tagLex, double scoreLimit) throws IOException {
         BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream(modelDir.getAbsolutePath() + "/book"),
                 "UTF-8"));
@@ -40,69 +40,36 @@ public class TrainWAMwithTitleInstead extends TrainWAMBase {
             // use the first sentence to replace the title
             String[] titleWords = ws.segment(sentences[0]);
 
-            for (int i = 0; i < titleWords.length; i++) {
-                if (localWordLex.getWord(titleWords[i]) != null) {
-                    if (i == 0) {
-                        out.write(titleWords[i]);
-                        outTag.write(titleWords[i]);
-                    } else {
-                        out.write(" " + titleWords[i]);
-                        outTag.write(" " + titleWords[i]);
-                    }
-                }
-            }
-            out.newLine();
-            out.flush();
-            outTag.newLine();
-            outTag.flush();
+            writeResultLines(titleWords, wordLex, out);
+            writeResultLines(titleWords, wordLex, outTag);
 
-            Vector<Double> wordTfidf = new Vector<Double>();
-            Vector<String> wordList = new Vector<String>();
-            double normalize = 0.0;
-            Counter<String> termFreq = new Counter<String>();
+            Vector<Double> wordTfidf = new Vector<>();
+            Vector<String> wordList = new Vector<>();
+
+            Counter<String> termFreq = new Counter<>();
             for (String word : titleWords) {
                 termFreq.inc(word, 1);
             }
-            for (Entry<String, Long> e : termFreq) {
-                String word = e.getKey();
-                if (localWordLex.getWord(word) == null) {
-                    continue;
-                }
-                wordList.add(word);
 
-                double tf = ((double) e.getValue())
-                        / ((double) titleWords.length);
-                double idf = Math.log(((double) localWordLex.getNumDocs())
-                        / ((double) localWordLex.getWord(word)
-                        .getDocumentFrequency()));
-                double tfidf = tf * idf;
-                wordTfidf.add(tfidf);
-                normalize += tfidf * tfidf;
-            }
-            Vector<Double> wordProb = new Vector<Double>();
+            double normalize;
+            normalize = getTotalTfidf(wordLex, titleWords, termFreq, wordTfidf, wordList, true, true);
+
+            Vector<Double> wordProb = new Vector<>();
             for (int i = 0; i < wordTfidf.size(); i++) {
                 wordProb.add(wordTfidf.elementAt(i) / normalize);
             }
 
 
-
             for (int i = 1; i < sentences.length; i++) {
-//                HashMap<String, Integer> contentTf = new HashMap<String, Integer>();
                 Counter<String> contentTf = new Counter<>();
-                HashMap<String, Double> contentTfidf = new HashMap<String, Double>();
+                HashMap<String, Double> contentTfidf = new HashMap<>();
                 double score = 0.0;
                 String sentence = sentences[i];
                 String[] words = ws.segment(sentence);
                 for (String word : words) {
                     contentTf.inc(word, 1);
-//                    if (contentTf.containsKey(word)) {
-//                        int tmp = contentTf.get(word);
-//                        contentTf.put(word, tmp + 1);
-//                    } else {
-//                        contentTf.put(word, 1);
-//                    }
                 }
-                normalize = getNormalize(localWordLex, contentTf, contentTfidf, words);
+                normalize = calTFIDFTimes(wordLex, contentTf, contentTfidf, words);
                 for (Entry<String, Double> e : contentTfidf.entrySet()) {
                     e.setValue(e.getValue() / normalize);
                 }
@@ -113,8 +80,8 @@ public class TrainWAMwithTitleInstead extends TrainWAMBase {
                     }
                 }
                 if (score >= scoreLimit) {
-                    writeResultLines(words, localWordLex, out);
-                    writeResultLines(titleWords, localWordLex, outTag);
+                    writeResultLines(words, wordLex, out);
+                    writeResultLines(titleWords, wordLex, outTag);
                 }
             }
 
@@ -129,24 +96,6 @@ public class TrainWAMwithTitleInstead extends TrainWAMBase {
 
     }
 
-    private double getNormalize(Lexicon localWordLex, Counter<String> contentTf, HashMap<String, Double> contentTfidf, String[] words) {
-        double normalize;
-        normalize = 0.0;
-        for (Entry<String, Long> e : contentTf) {
-            String word = e.getKey();
-            if (localWordLex.getWord(word) == null) {
-                continue;
-            }
-            double tf = ((double) e.getValue()) / ((double) words.length);
-            double idf = Math.log(((double) localWordLex.getNumDocs())
-                    / ((double) localWordLex.getWord(word)
-                    .getDocumentFrequency()));
-            double tfidf = tf * idf;
-            contentTfidf.put(word, tfidf);
-            normalize += tfidf * tfidf;
-        }
-        return normalize;
-    }
 
     public static void main(String[] args) throws IOException {
     }
