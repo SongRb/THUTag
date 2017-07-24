@@ -85,37 +85,24 @@ public class TrainWAMwithTitleInstead extends TrainWAMBase {
             }
 
 
-            HashMap<String, Integer> contentTf = new HashMap<String, Integer>();
-            HashMap<String, Double> contentTfidf = new HashMap<String, Double>();
-            for (int i = 1; i < sentences.length; i++) {
-                contentTf.clear();
-                contentTfidf.clear();
 
+            for (int i = 1; i < sentences.length; i++) {
+//                HashMap<String, Integer> contentTf = new HashMap<String, Integer>();
+                Counter<String> contentTf = new Counter<>();
+                HashMap<String, Double> contentTfidf = new HashMap<String, Double>();
                 double score = 0.0;
                 String sentence = sentences[i];
                 String[] words = ws.segment(sentence);
                 for (String word : words) {
-                    if (contentTf.containsKey(word)) {
-                        int tmp = contentTf.get(word);
-                        contentTf.put(word, tmp + 1);
-                    } else {
-                        contentTf.put(word, 1);
-                    }
+                    contentTf.inc(word, 1);
+//                    if (contentTf.containsKey(word)) {
+//                        int tmp = contentTf.get(word);
+//                        contentTf.put(word, tmp + 1);
+//                    } else {
+//                        contentTf.put(word, 1);
+//                    }
                 }
-                normalize = 0.0;
-                for (Entry<String, Integer> e : contentTf.entrySet()) {
-                    String word = e.getKey();
-                    if (localWordLex.getWord(word) == null) {
-                        continue;
-                    }
-                    double tf = ((double) e.getValue()) / ((double) words.length);
-                    double idf = Math.log(((double) localWordLex.getNumDocs())
-                            / ((double) localWordLex.getWord(word)
-                            .getDocumentFrequency()));
-                    double tfidf = tf * idf;
-                    contentTfidf.put(word, tfidf);
-                    normalize += tfidf * tfidf;
-                }
+                normalize = getNormalize(localWordLex, contentTf, contentTfidf, words);
                 for (Entry<String, Double> e : contentTfidf.entrySet()) {
                     e.setValue(e.getValue() / normalize);
                 }
@@ -126,29 +113,8 @@ public class TrainWAMwithTitleInstead extends TrainWAMBase {
                     }
                 }
                 if (score >= scoreLimit) {
-                    for (int j = 0; j < words.length; j++) {
-                        if (localWordLex.getWord(words[j]) != null) {
-                            if (j == 0) {
-                                out.write(words[j]);
-                            } else {
-                                out.write(" " + words[j]);
-                            }
-                        }
-                    }
-                    out.newLine();
-                    out.flush();
-
-                    for (int j = 0; j < titleWords.length; j++) {
-                        if (localWordLex.getWord(titleWords[j]) != null) {
-                            if (j == 0) {
-                                outTag.write(titleWords[j]);
-                            } else {
-                                outTag.write(" " + titleWords[j]);
-                            }
-                        }
-                    }
-                    outTag.newLine();
-                    outTag.flush();
+                    writeResultLines(words, localWordLex, out);
+                    writeResultLines(titleWords, localWordLex, outTag);
                 }
             }
 
@@ -161,6 +127,25 @@ public class TrainWAMwithTitleInstead extends TrainWAMBase {
         LOG.info("source and target are prepared!");
 
 
+    }
+
+    private double getNormalize(Lexicon localWordLex, Counter<String> contentTf, HashMap<String, Double> contentTfidf, String[] words) {
+        double normalize;
+        normalize = 0.0;
+        for (Entry<String, Long> e : contentTf) {
+            String word = e.getKey();
+            if (localWordLex.getWord(word) == null) {
+                continue;
+            }
+            double tf = ((double) e.getValue()) / ((double) words.length);
+            double idf = Math.log(((double) localWordLex.getNumDocs())
+                    / ((double) localWordLex.getWord(word)
+                    .getDocumentFrequency()));
+            double tfidf = tf * idf;
+            contentTfidf.put(word, tfidf);
+            normalize += tfidf * tfidf;
+        }
+        return normalize;
     }
 
     public static void main(String[] args) throws IOException {

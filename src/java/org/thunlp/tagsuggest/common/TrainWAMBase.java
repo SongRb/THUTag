@@ -8,12 +8,11 @@ import org.thunlp.misc.Flags;
 import org.thunlp.text.Lexicon;
 import org.thunlp.tool.GenericTool;
 
-import java.util.*;
-import java.util.logging.Logger;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.util.*;
+import java.util.logging.Logger;
 
 public class TrainWAMBase implements GenericTool, ModelTrainer {
     protected static Logger LOG = Logger.getAnonymousLogger();
