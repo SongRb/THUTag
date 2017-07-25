@@ -7,7 +7,6 @@ cxx.iml
 module_cxx.xml
 thutag.properties
 thutag.xml
-build/*
 
 traindata/KeywordPost.dat.taglex
 traindata/KeywordPost.dat.wordlex
@@ -16,3 +15,11 @@ traindata/bookPost70000.dat.wordlex
 traindata/key.dat
 traindata/key.dat.taglex
 traindata/key.dat.wordlex
+bin/org/thunlp/tagsuggest/common/SparseCounter$1.class
+bin/org/thunlp/tagsuggest/train/TrainWAMTag$StreamGobbler.class
+bin/org/thunlp/tagsuggest/train/TrainWAMTag.class
+traindata/post.dat.taglex
+traindata/post.dat.wordlex
+traindata/zhihuPost.dat
+traindata/zhihuPost.dat.taglex
+traindata/zhihuPost.dat.wordlex
