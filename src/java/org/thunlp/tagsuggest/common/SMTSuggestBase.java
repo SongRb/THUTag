@@ -13,6 +13,7 @@ public class SMTSuggestBase implements TagSuggest {
     protected static List<WeightString> EMPTY_SUGGESTION = new LinkedList<>();
     protected WordFeatureExtractor extractor = null;
     protected Lexicon wordLex = null;
+    protected Lexicon tagLex = null;
     protected Properties config = new Properties();
     protected HashMap<Integer, String> bookMap = new HashMap<>();
     protected HashMap<String, Integer> idMap = new HashMap<>();
@@ -59,14 +60,18 @@ public class SMTSuggestBase implements TagSuggest {
         File dir = new File(modelPath);
 
         Filter filter = new Filter("t1.5");
-        String files_tmp[] = dir.list(filter);
 
-        Vector<String> files = new Vector<String>();
-        files.addAll(Arrays.asList(files_tmp));
+        Vector<String> fileList = new Vector<>();
+        String[] files = dir.list(filter);
 
-        Collections.sort(files);
+        if (files == null) {
+            System.exit(0);
+        } else {
+            fileList.addAll(Arrays.asList(files));
+        }
+        Collections.sort(fileList);
 
-        int files_len = files.size();
+        int files_len = fileList.size();
 
         if (files_len == 0) {
             System.out.println("*.t1.5 not exist");
@@ -74,40 +79,19 @@ public class SMTSuggestBase implements TagSuggest {
         } else {
             String word2Tag;
             String tag2Word;
+            int fileListLength = fileList.size();
 
-            word2Tag = files.get(files_len - 2);
-            tag2Word = files.get(files_len - 1);
+            word2Tag = fileList.get(fileListLength - 2);
+            tag2Word = fileList.get(fileListLength - 1);
             LOG.info(word2Tag);
             LOG.info(tag2Word);
-            BufferedReader pro = new BufferedReader(new InputStreamReader(
-                    new FileInputStream(modelPath + File.separator + word2Tag),
-                    "UTF-8"));
-            String proLine;
-            while ((proLine = pro.readLine()) != null) {
-                String[] data = proLine.split(" ");
-
-                if (data.length != 3)
-                    continue;
-
-                int first = Integer.parseInt(data[0]);
-                int second = Integer.parseInt(data[1]);
-                double probability = Double.parseDouble(data[2]);
-                if (first == 0 || second == 0) {
-                    continue;
-                }
-                if (proTable.containsKey(first)) {
-                    proTable.get(first).put(second, probability);
-                } else {
-                    HashMap<Integer, Double> tmp = new HashMap<Integer, Double>();
-                    tmp.put(second, probability);
-                    proTable.put(first, tmp);
-                }
-            }
-            pro.close();
+            BufferedReader bufferedReader = new BufferedReader(
+                    new InputStreamReader(new FileInputStream(modelPath + File.separator + word2Tag), "UTF-8"));
+            loadProbabilityTable(proTable, 0, bufferedReader);
         }
-        LOG.info(Integer.toString(proTable.size()));
+        LOG.info("proTable Size: " + Integer.toString(proTable.size()));
 
-        // Read ti.fianl
+        // Read ti.final
         Filter filter2 = new Filter("ti.final");
         String files2_tmp[] = dir.list(filter2);
 
@@ -119,7 +103,6 @@ public class SMTSuggestBase implements TagSuggest {
 
         Collections.sort(files2);
 
-
         int files2_len = files2.size();
 
         if (files2_len == 0) {
@@ -128,43 +111,48 @@ public class SMTSuggestBase implements TagSuggest {
         } else {
             String word2Tag;
             String tag2Word;
+            int fileListLength = files2.size();
 
-            word2Tag = files2.get(files2_len - 2);
-            tag2Word = files2.get(files2_len - 1);
+            word2Tag = files2.get(fileListLength - 2);
+            tag2Word = files2.get(fileListLength - 1);
             LOG.info(word2Tag);
             LOG.info(tag2Word);
-            BufferedReader inverse = new BufferedReader(
+            BufferedReader bufferedReader = new BufferedReader(
                     new InputStreamReader(new FileInputStream(modelPath + File.separator + tag2Word), "UTF-8"));
-            String line;
-            while ((line = inverse.readLine()) != null) {
-                String[] data = line.split(" ");
-                if (data.length != 3) continue;
-
-                int first = Integer.parseInt(data[0]);
-                int second = Integer.parseInt(data[1]);
-                double probability = Double.parseDouble(data[2]);
-                if (first == 0 || second == 0 || (probability < 0.01)) {
-                    continue;
-                }
-                if (inverseTable.containsKey(first)) {
-                    inverseTable.get(first).put(second, probability);
-                } else {
-                    HashMap<Integer, Double> tmp = new HashMap<>();
-                    tmp.put(second, probability);
-                    inverseTable.put(first, tmp);
-                }
-            }
-            inverse.close();
+            loadProbabilityTable(inverseTable, 0.01, bufferedReader);
+            LOG.info("inverseTable size: " + Integer.toString(inverseTable.size()));
         }
 
         // read wordlex
         wordLex = new Lexicon();
-        String input = modelPath + "/wordlex";
-        File cachedWordLexFile = new File(input);
-        if (cachedWordLexFile.exists()) {
-            LOG.info("Use cached lexicons");
-            wordLex.loadFromFile(cachedWordLexFile);
+        loadLexicon(modelPath, "wordlex", wordLex);
+
+        // Read tag lexicon
+        tagLex = new Lexicon();
+        loadLexicon(modelPath, "taglex", tagLex);
+    }
+
+    private void loadProbabilityTable(HashMap<Integer, HashMap<Integer, Double>> table, double threshold, BufferedReader bufferedReader) throws IOException {
+        String line;
+        while ((line = bufferedReader.readLine()) != null) {
+            String[] data = line.split(" ");
+            if (data.length != 3) continue;
+
+            int first = Integer.parseInt(data[0]);
+            int second = Integer.parseInt(data[1]);
+            double probability = Double.parseDouble(data[2]);
+            if (first == 0 || second == 0 || (probability < threshold)) {
+                continue;
+            }
+            if (table.containsKey(first)) {
+                table.get(first).put(second, probability);
+            } else {
+                HashMap<Integer, Double> tmp = new HashMap<>();
+                tmp.put(second, probability);
+                table.put(first, tmp);
+            }
         }
+        bufferedReader.close();
     }
 
     @Override
@@ -172,13 +160,11 @@ public class SMTSuggestBase implements TagSuggest {
         // TODO Auto-generated method stub
         this.config = config;
         extractor = new WordFeatureExtractor(config);
-
     }
 
     @Override
     public List<WeightString> suggest(Post p, StringBuilder explain) {
         // TODO Auto-generated method stub
-        HashMap<Integer, Double> wordTfidf = new HashMap<>();
 
         String[] words = extractor.extract(p);
         Counter<String> termFreq = new Counter<>();
@@ -194,7 +180,7 @@ public class SMTSuggestBase implements TagSuggest {
             String word = e.getKey();
 
             double tf = (double) e.getValue() / (double) words.length;
-            double idf = 0.0;
+            double idf;
 
             if (wordLex.getWord(word) != null) {
                 idf = Math.log((double) wordLex.getNumDocs()
@@ -205,22 +191,14 @@ public class SMTSuggestBase implements TagSuggest {
             double tfidf = tf * idf;
             int id = idMap.get(word);
             if (proTable.containsKey(id)) {
-                wordTfidf.put(id, tfidf);
-
-                HashMap<Integer, Double> tmpMap = new HashMap<>();
-                tmpMap.putAll(proTable.get(id));
-
                 // to suggest the tags
                 for (Map.Entry<Integer, Double> ee : proTable.get(id).entrySet()) {
                     int tagId = ee.getKey();
                     if (inverseTable.containsKey(id) && inverseTable.get(id).containsKey(tagId)) {
-                        double pro = getPro(id, ee, tagId);
+                        double pro = calProbability(id, ee, tagId);
 
                         if (proMap.containsKey(tagId)) {
-                            double tmp = proMap.get(tagId);
-                            tmp += tfidf * pro;
-                            proMap.remove(tagId);
-                            proMap.put(tagId, tmp);
+                            proMap.put(tagId, proMap.get(tagId) + tfidf * pro);
                         } else {
                             proMap.put(tagId, tfidf * pro);
                         }
@@ -230,17 +208,32 @@ public class SMTSuggestBase implements TagSuggest {
         }
 
         // ranking
+
+        return rankTags(proMap);
+    }
+
+    protected List<WeightString> rankTags(HashMap<Integer, Double> proMap) {
         List<WeightString> tags = new ArrayList<>();
         for (Map.Entry<Integer, Double> e : proMap.entrySet()) {
-            tags.add(new WeightString(bookTagMap.get(e.getKey()), e.getValue()));
+            WeightString candidate = new WeightString(bookTagMap.get(e.getKey()), e.getValue());
+            tags.add(candidate);
         }
         tags.sort((o1, o2) -> Double.compare(o2.weight, o1.weight));
-
         return tags;
     }
 
-    protected double getPro(int id, Map.Entry<Integer, Double> ee, int tagId) {
+    protected double calProbability(int id, Map.Entry<Integer, Double> ee, int tagId) {
         return 0.0;
+    }
+
+    private void loadLexicon(String modelPath, String lexName, Lexicon lex) {
+        String input = modelPath + File.separator + lexName;
+        File cachedWordLexFile = new File(input);
+        if (cachedWordLexFile.exists()) {
+            LOG.info("Use cached lexicons");
+            lex.loadFromFile(cachedWordLexFile);
+            LOG.info(lexName + " Size: " + Integer.toString(lex.getSize()));
+        }
     }
 
     @Override

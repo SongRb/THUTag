@@ -75,4 +75,4 @@ $(document).ready(function() {
   $("#inputarea").keyup(prepareUpdate);
   $("#showdebug").click(showDebug);
   $("#hidedebug").click(hideDebug);
-})
+});

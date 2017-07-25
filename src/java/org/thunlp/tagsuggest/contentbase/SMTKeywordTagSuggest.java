@@ -43,8 +43,7 @@ public class SMTKeywordTagSuggest extends SMTSuggestBase {
         outTag.close();
     }
 
-
-    protected double getPro(int id, Map.Entry<Integer, Double> ee, int tagId) {
+    protected double calProbability(int id, Map.Entry<Integer, Double> ee, int tagId) {
         return ee.getValue() * inverseTable.get(id).get(tagId);
     }
 

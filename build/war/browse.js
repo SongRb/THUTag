@@ -53,4 +53,4 @@ $(document).ready(function() {
   $("#querybtn").click(search);
   $("#previous").click(previous);
   $("#next").click(next);
-})
+});
