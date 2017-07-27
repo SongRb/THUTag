@@ -95,7 +95,7 @@ public class TrainWTM extends TrainWAMBase {
             }
 
             double totalTfidf;
-            totalTfidf = getTotalTfidf(wordLex, words, termFreq, wordTfidf, wordList, false, false);
+            totalTfidf = getTotalTfidf(wordLex, words.length, termFreq, wordTfidf, wordList, false, false);
 
             Vector<Double> wordProb = new Vector<>();
             for (int i = 0; i < wordTfidf.size(); i++) {

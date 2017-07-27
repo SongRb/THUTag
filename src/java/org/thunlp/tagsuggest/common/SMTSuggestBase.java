@@ -15,8 +15,15 @@ public class SMTSuggestBase implements TagSuggest {
     protected Lexicon wordLex = null;
     protected Lexicon tagLex = null;
     protected Properties config = new Properties();
+    // For word in post content
+    // id-string
     protected HashMap<Integer, String> bookMap = new HashMap<>();
+    // string-id
     protected HashMap<String, Integer> idMap = new HashMap<>();
+    // string-occurrence
+
+    // For word in post tag
+    // id-string
     protected HashMap<Integer, String> bookTagMap = new HashMap<>();
 
     protected HashMap<String, Integer> df = new HashMap<>();
@@ -195,12 +202,12 @@ public class SMTSuggestBase implements TagSuggest {
                 for (Map.Entry<Integer, Double> ee : proTable.get(id).entrySet()) {
                     int tagId = ee.getKey();
                     if (inverseTable.containsKey(id) && inverseTable.get(id).containsKey(tagId)) {
-                        double pro = calProbability(id, ee, tagId);
+                        double prob = calProbability(id, ee, tagId);
 
                         if (proMap.containsKey(tagId)) {
-                            proMap.put(tagId, proMap.get(tagId) + tfidf * pro);
+                            proMap.put(tagId, proMap.get(tagId) + tfidf * prob);
                         } else {
-                            proMap.put(tagId, tfidf * pro);
+                            proMap.put(tagId, tfidf * prob);
                         }
                     }
                 }

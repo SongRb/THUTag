@@ -52,7 +52,7 @@ public class TrainWAMwithTitleInstead extends TrainWAMBase {
             }
 
             double normalize;
-            normalize = getTotalTfidf(wordLex, titleWords, termFreq, wordTfidf, wordList, true, true);
+            normalize = getTotalTfidf(wordLex, titleWords.length, termFreq, wordTfidf, wordList, true, true);
 
             Vector<Double> wordProb = new Vector<>();
             for (int i = 0; i < wordTfidf.size(); i++) {
@@ -69,7 +69,7 @@ public class TrainWAMwithTitleInstead extends TrainWAMBase {
                 for (String word : words) {
                     contentTf.inc(word, 1);
                 }
-                normalize = calTFIDFTimes(wordLex, contentTf, contentTfidf, words);
+                normalize = calTFIDFTimes(wordLex, words.length, contentTf, contentTfidf);
                 for (Entry<String, Double> e : contentTfidf.entrySet()) {
                     e.setValue(e.getValue() / normalize);
                 }

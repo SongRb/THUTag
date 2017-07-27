@@ -39,7 +39,7 @@ public class TrainWAM extends TrainWAMBase {
             writeResultLines(titleWords, wordLex, out);
             writeResultLines(titleWords, wordLex, outTag);
 
-            // Calculate term frequency in article title
+            // Calculate word frequency in title
             Counter<String> termFreq = new Counter<>();
             for (String word : titleWords) {
                 termFreq.inc(word, 1);
@@ -48,9 +48,10 @@ public class TrainWAM extends TrainWAMBase {
             Vector<Double> wordTfidf = new Vector<>();
             Vector<String> wordList = new Vector<>();
 
-            double normalize;
-            normalize = getTotalTfidf(wordLex, titleWords, termFreq, wordTfidf, wordList, true, true);
+            double normalize = getTotalTfidf(wordLex, titleWords.length, termFreq, wordTfidf, wordList, true, true);
 
+            // Normalization
+            // word in title and whole corpus
             Vector<Double> wordProb = new Vector<>();
             for (int i = 0; i < wordTfidf.size(); i++) {
                 wordProb.add(wordTfidf.elementAt(i) / normalize);
@@ -59,13 +60,17 @@ public class TrainWAM extends TrainWAMBase {
             // Operation on article content
             String content = p.getSummary() + p.getContent();
             content = content.replaceAll("\n", "");
-            String[] splittedSentences = content.split("[。！]");
+            String[] sentenceList = content.split("[。！]");
 
-            for (String sentence : splittedSentences) {
-                if (splittedSentences.length <= 2) {
+            for (String sentence : sentenceList) {
+                // TODO Find out whether sentenceList or a single sentence should be used
+                if (sentenceList.length <= 2) {
                     continue;
                 }
 
+                // Word freq in one sentence
+                // Calculate the importance of a sentence
+                // to decide whether associate it with title as candidate translation pair or not
                 String[] words = ws.segment(sentence);
                 Counter<String> contentTf = new Counter<>();
                 for (String word : words) {
@@ -76,15 +81,16 @@ public class TrainWAM extends TrainWAMBase {
                     }
                 }
 
+                // TF is word frequency in one sentence
+                // IDF is word frequency among whole corpus
                 double score = 0.0;
                 HashMap<String, Double> contentTfidf = new HashMap<>();
-
-                normalize = calTFIDFTimes(wordLex, contentTf, contentTfidf, words);
-
+                normalize = calTFIDFTimes(wordLex, words.length, contentTf, contentTfidf);
 
                 for (Map.Entry<String, Double> e : contentTfidf.entrySet()) {
                     e.setValue(e.getValue() / normalize);
                 }
+
                 for (int j = 0; j < wordList.size(); j++) {
                     String word = wordList.get(j);
                     if (contentTfidf.containsKey(word)) {

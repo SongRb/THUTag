@@ -76,7 +76,7 @@ public class TrainWAMBase implements GenericTool, ModelTrainer {
             createTrainData(input, modelDir, localWordLex, localTagLex, scoreLimit);
 
             // training
-            gizappTrain(modelDir);
+            trainSMTModel(modelDir);
 
 
         } catch (Exception e) {
@@ -143,7 +143,7 @@ public class TrainWAMBase implements GenericTool, ModelTrainer {
 
     }
 
-    protected void gizappTrain(File modelDir) throws IOException, InterruptedException {
+    protected void trainSMTModel(File modelDir) throws IOException, InterruptedException {
         Runtime rn = Runtime.getRuntime();
         Process p;
         p = rn
@@ -164,9 +164,9 @@ public class TrainWAMBase implements GenericTool, ModelTrainer {
         // from word to tag
         p = rn.exec(giza_path + File.separator + "GIZA++ -S book.vcb -T bookTag.vcb -C book_bookTag.snt  -m1 5 -m2 0 -mh 0 -m3 0 -m4 0 -model1dumpfrequency 1"
                 , null, modelDir);
-        org.thunlp.tagsuggest.common.StreamGobbler errorGobbler = new org.thunlp.tagsuggest.common.StreamGobbler(p.getErrorStream(),
+        StreamGobbler errorGobbler = new StreamGobbler(p.getErrorStream(),
                 "Error", LOG);
-        org.thunlp.tagsuggest.common.StreamGobbler outputGobbler = new org.thunlp.tagsuggest.common.StreamGobbler(p.getInputStream(),
+        StreamGobbler outputGobbler = new StreamGobbler(p.getInputStream(),
                 "Output", LOG);
         errorGobbler.start();
         outputGobbler.start();
@@ -182,8 +182,8 @@ public class TrainWAMBase implements GenericTool, ModelTrainer {
         // from tag to word
         p = rn.exec(giza_path + File.separator + "GIZA++ -S bookTag.vcb -T book.vcb -C bookTag_book.snt -m1 5 -m2 0 -mh 0 -m3 0 -m4 0  -model1dumpfrequency 1",
                 null, modelDir);
-        errorGobbler = new org.thunlp.tagsuggest.common.StreamGobbler(p.getErrorStream(), "Error", LOG);
-        outputGobbler = new org.thunlp.tagsuggest.common.StreamGobbler(p.getInputStream(), "Output", LOG);
+        errorGobbler = new StreamGobbler(p.getErrorStream(), "Error", LOG);
+        outputGobbler = new StreamGobbler(p.getInputStream(), "Output", LOG);
         errorGobbler.start();
         outputGobbler.start();
         p.waitFor();
@@ -233,20 +233,17 @@ public class TrainWAMBase implements GenericTool, ModelTrainer {
         }
     }
 
-    protected double getTotalTfidf(Lexicon localWordlex, String[] words, Counter<String> wordCounter, Vector<Double> wordTfidf, Vector<String> wordList, boolean inLex, boolean doubleNormal) {
+    protected double getTotalTfidf(Lexicon lex, int sentenceLength, Counter<String> wordCounter, Vector<Double> wordTfidf, Vector<String> wordList, boolean inLex, boolean doubleNormal) {
         double totalTfidf = 0.0;
         for (Map.Entry<String, Long> e : wordCounter) {
             String word = e.getKey();
-            if (inLex && localWordlex.getWord(word) == null) {
+            if (inLex && lex.getWord(word) == null) {
                 continue;
             }
 
             wordList.add(word);
-            double tf = ((double) e.getValue())
-                    / ((double) words.length);
-            double idf = Math.log(((double) localWordlex.getNumDocs())
-                    / ((double) localWordlex.getWord(word)
-                    .getDocumentFrequency()));
+            double tf = ((double) e.getValue()) / ((double) sentenceLength);
+            double idf = Math.log(((double) lex.getNumDocs()) / ((double) lex.getWord(word).getDocumentFrequency()));
             double tfidf = tf * idf;
             wordTfidf.add(tfidf);
 
@@ -259,18 +256,15 @@ public class TrainWAMBase implements GenericTool, ModelTrainer {
         return totalTfidf;
     }
 
-    protected double calTFIDFTimes(Lexicon lex, Counter<String> wordCounter, HashMap<String, Double> wordTfidf, String[] words) {
-        double normalize;
-        normalize = 0.0;
+    protected double calTFIDFTimes(Lexicon lex, int sentenceLength, Counter<String> wordCounter, HashMap<String, Double> wordTfidf) {
+        double normalize = 0.0;
         for (Map.Entry<String, Long> e : wordCounter) {
             String word = e.getKey();
             if (lex.getWord(word) == null) {
                 continue;
             }
-            double tf = ((double) e.getValue()) / ((double) words.length);
-            double idf = Math.log(((double) lex.getNumDocs())
-                    / ((double) lex.getWord(word)
-                    .getDocumentFrequency()));
+            double tf = ((double) e.getValue()) / ((double) sentenceLength);
+            double idf = Math.log(((double) lex.getNumDocs()) / ((double) lex.getWord(word).getDocumentFrequency()));
             double tfidf = tf * idf;
             wordTfidf.put(word, tfidf);
             normalize += tfidf * tfidf;

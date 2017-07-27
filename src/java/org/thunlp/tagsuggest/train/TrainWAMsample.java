@@ -49,7 +49,7 @@ public class TrainWAMsample extends TrainWAMBase {
                 termFreq.inc(word, 1);
             }
 
-            double totalTfidf = getTotalTfidf(wordLex, words, termFreq, wordTfidf, wordList, false, false);
+            double totalTfidf = getTotalTfidf(wordLex, words.length, termFreq, wordTfidf, wordList, false, false);
             Vector<Double> wordProb = new Vector<>();
             for (int i = 0; i < wordTfidf.size(); i++) {
                 wordProb.add(wordTfidf.elementAt(i) / totalTfidf);
@@ -65,7 +65,7 @@ public class TrainWAMsample extends TrainWAMBase {
                 tagTermFreq.inc(tag, 1);
             }
 
-            totalTfidf = getTotalTfidf(wordLex, tags, tagTermFreq, tagTfidf, tagList, false, false);
+            totalTfidf = getTotalTfidf(wordLex, tags.length, tagTermFreq, tagTfidf, tagList, false, false);
             Vector<Double> tagProb = new Vector<>();
             for (int i = 0; i < tagTfidf.size(); i++) {
                 tagProb.add(tagTfidf.elementAt(i) / totalTfidf);
