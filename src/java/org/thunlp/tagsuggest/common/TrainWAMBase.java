@@ -80,13 +80,14 @@ public class TrainWAMBase implements GenericTool, ModelTrainer {
 
 
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             LOG.info("Error exec!");
         }
 
 
     }
 
-    protected void createExtractor(String input) throws IOException {
+    private void createExtractor(String input) throws IOException {
         ws = new ForwardMaxWordSegment();
         Lexicon wordLex = new Lexicon();
         Lexicon tagLex = new Lexicon();
@@ -139,8 +140,6 @@ public class TrainWAMBase implements GenericTool, ModelTrainer {
             wordLex.saveToFile(wordLexFile);
             tagLex.saveToFile(tagLexFile);
         }
-
-
     }
 
     protected void trainSMTModel(File modelDir) throws IOException, InterruptedException {

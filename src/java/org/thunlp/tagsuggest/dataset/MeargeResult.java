@@ -1,21 +1,12 @@
 package org.thunlp.tagsuggest.dataset;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.swing.text.html.HTML.Tag;
-
 import org.thunlp.io.JsonUtil;
 import org.thunlp.tagsuggest.common.MyKeyword;
-import org.thunlp.tagsuggest.common.MyKeyword2;
 import org.thunlp.tagsuggest.common.ThreeMethodKeyword;
+
+import java.io.*;
+import java.util.HashSet;
+import java.util.Set;
 
 public class MeargeResult {
 
@@ -77,10 +68,10 @@ public class MeargeResult {
 				line2 = inputWrong.readLine();
 				line3 = inputTfidf.readLine();
 				line4 = inputTextrank.readLine();
-				MyKeyword2 keyword1 = J.fromJson(line1, MyKeyword2.class);
-				MyKeyword2 keyword2 = J.fromJson(line2, MyKeyword2.class);
-				MyKeyword2 keyword3 = J.fromJson(line3, MyKeyword2.class);
-				MyKeyword2 keyword4 = J.fromJson(line4, MyKeyword2.class);
+				MyKeyword keyword1 = J.fromJson(line1, MyKeyword.class);
+				MyKeyword keyword2 = J.fromJson(line2, MyKeyword.class);
+				MyKeyword keyword3 = J.fromJson(line3, MyKeyword.class);
+				MyKeyword keyword4 = J.fromJson(line4, MyKeyword.class);
 				int id1 = Integer.parseInt(keyword1.getId());
 				int id2 = Integer.parseInt(keyword2.getId());
 				int id3 = Integer.parseInt(keyword3.getId());

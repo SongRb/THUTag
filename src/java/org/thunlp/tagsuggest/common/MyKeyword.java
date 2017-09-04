@@ -1,12 +1,9 @@
 package org.thunlp.tagsuggest.common;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import org.thunlp.misc.WeightString;
 
 public class MyKeyword {
 	String title;
@@ -16,13 +13,13 @@ public class MyKeyword {
 	//HashMap<String, Integer> doubanTags;
 	Set<String> answerSet;
 	//HashMap<String, Double> suggestTags;
-	List<WeightString> suggestTags;
+	List<String> suggestTags;
 	
 	public MyKeyword() {
 		//doubanTags = new HashMap<String, Integer>();
 		answerSet = new HashSet<String>();
 		//suggestTags = new HashMap<String, Double>();
-		suggestTags = new ArrayList<WeightString>();
+		suggestTags = new ArrayList<String>();
 	}
 	
 	public void setTitle(String title) {
@@ -63,10 +60,12 @@ public class MyKeyword {
 	public Set<String> getAnswer(){
 		return answerSet;
 	}
-	public void setSuggestTags(List<WeightString> tags) {
-		suggestTags = tags;
-	}
-	public List<WeightString> getSuggestTags() {
+
+	public List<String> getSuggestTags() {
 		return suggestTags;
+	}
+
+	public void setSuggestTags(List<String> tags) {
+		suggestTags = tags;
 	}
 }

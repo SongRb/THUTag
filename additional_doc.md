@@ -25,3 +25,9 @@ value: a hash table contains corresponding tag and frequency
 after recompile the project, you should copy `tagsuggest.jar` from `./build` to `./demo`
 
 `WordFeatureExtractor.java`: way to get project_path was hard-encoded into `/home/tang/Documents/THUTag/demo`
+
+Training Model Class which extends from TrainWAMBase contains four main step:
+1. Create word feature extractor
+2. Create word lex from corpus
+3. Create translation pair
+4. Train translation model via giza++

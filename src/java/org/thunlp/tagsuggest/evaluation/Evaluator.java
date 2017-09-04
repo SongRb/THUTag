@@ -1,43 +1,19 @@
 package org.thunlp.tagsuggest.evaluation;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
-import java.util.Map.Entry;
-import java.util.logging.Logger;
-import java.util.regex.Pattern;
-
+import edu.stanford.nlp.util.StringUtils;
 import org.thunlp.io.JsonUtil;
 import org.thunlp.io.RecordReader;
 import org.thunlp.io.TextFileWriter;
 import org.thunlp.misc.Flags;
 import org.thunlp.misc.WeightString;
-import org.thunlp.tagsuggest.common.ConfigIO;
-import org.thunlp.tagsuggest.common.DoubanPost;
-import org.thunlp.tagsuggest.common.GenerativeTagSuggest;
-import org.thunlp.tagsuggest.common.KeywordPost;
-import org.thunlp.tagsuggest.common.MyKeyword2;
-import org.thunlp.tagsuggest.common.MyTag;
-import org.thunlp.tagsuggest.common.Post;
-import org.thunlp.tagsuggest.common.TagFilter;
-import org.thunlp.tagsuggest.common.TagSuggest;
-import org.thunlp.tagsuggest.common.WordFeatureExtractor;
+import org.thunlp.tagsuggest.common.*;
 import org.thunlp.text.Lexicon;
 import org.thunlp.tool.GenericTool;
 
-import edu.stanford.nlp.util.StringUtils;
+import java.io.*;
+import java.util.*;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Compute P/R/F1 at different number of tags for a tag suggester.
@@ -380,8 +356,8 @@ public class Evaluator implements GenericTool {
 					
 					
 				}
-		
-				MyKeyword2 myKeyword = new MyKeyword2();
+
+				MyKeyword myKeyword = new MyKeyword();
 				myKeyword.setTitle(p.getTitle());
 				myKeyword.setSummary(p.getSummary());
 				myKeyword.setContent(p.getContent());

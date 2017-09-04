@@ -45,6 +45,7 @@ public class TrainWAM extends TrainWAMBase {
                 termFreq.inc(word, 1);
             }
 
+            // word - TFIDF value pair
             Vector<Double> wordTfidf = new Vector<>();
             Vector<String> wordList = new Vector<>();
 
