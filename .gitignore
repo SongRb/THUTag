@@ -24,3 +24,11 @@ traindata/zhihuPost.dat
 traindata/zhihuPost.dat.taglex
 traindata/zhihuPost.dat.wordlex
 
+/traindata/YahooPost.dat.taglex
+/traindata/YahooPost.dat.wordlex
+/Command_Example
+traindata/YahooBusPost.dat
+traindata/YahooBusPost.dat.taglex
+traindata/YahooBusPost.dat.wordlex
+/additional_doc.md
+/giza-pp/

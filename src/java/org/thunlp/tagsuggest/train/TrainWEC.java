@@ -27,7 +27,7 @@ public class TrainWEC extends TrainWAMBase {
                 if (fold.length() > 0 && p.getExtras().equals(fold)) {
                     continue;
                 }
-                String[] features = extractor.extractKeyword(p, true, true, true);
+                String[] features = extractor.extractKeyword(p, true, false, true);
                 if (features.length <= 0) {
                     continue;
                 }
@@ -60,12 +60,11 @@ public class TrainWEC extends TrainWAMBase {
                 continue;
             }
 
-            String title = p.getTitle();
+            String title = p.getTitle().toLowerCase();
             String[] titleWords = ws.segment(title);
             writeLines(out, titleWords);
 
-
-            String content = p.getContent();
+            String content = p.getContent().toLowerCase();
             String[] contentWords = ws.segment(content);
             writeLines(outTag, contentWords);
         }

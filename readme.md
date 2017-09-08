@@ -1,5 +1,4 @@
-# THUTag: A Package of Kephrase Extraction and Social Tag Suggetion 
-==============
+# THUTag: A Package of Kephrase Extraction and Social Tag Suggetion
 
 Table of Content
 ==============
@@ -40,12 +39,18 @@ The package contains mutiple algorithms for Keyphrase Extraction and Social Tag 
 
 `./basepackage/`: some codes achieve things such as word segmentation, pagerank and so on.
  
-Part II: How To Compile THUTag
-==============
+Part II: How To Compile and Develope THUTag
+===========================================
 
 Environment : java (support java 1.8.0) , Linux
 
 `ant`: Start a terminal in the directory `./THUTag/`, input command `ant` and then THUTag will be compiled; or you can choose the `build.xml` for "ant build" in eclipse.
+
+Develop training model class which extends from TrainWAMBase contains four main step:
+1. Create word feature extractor
+2. Create word lex from corpus
+3. Create translation pair
+4. Train translation model via giza++
 
 
 Part III: How To Run Cross-validation of THUTag
@@ -155,7 +160,10 @@ Command for training model :
 
 	java -Xmx5G -jar tagsuggest.jar train.TrainTopicPageRank --input=/home/meepo/test/sample/KeywordPost.dat --output=/home/meepo/test/sample/1.rar --config="dataType=KeywordPost;numtopics=50;mintagfreq=10"  
 
-`config` is the config of the model.  
+`config` is the config of the model.
+
+NOTE:`cerr` was used in giza-pp to print debug information, some messages begin with ERROR are not considered as error report.
+
 Command for running UI : 
 
 	java -Xmx8G -jar tagsuggest.jar evaluation.GuiFrontEnd --model_path=/home/meepo/test/sampleui/  --algorithm=SMTTagSuggest --config="" --realtime=true 
@@ -190,6 +198,16 @@ Part VIII: Output File Formats of UI & Testing a Single Passage
 
 In the UI interface, our program will show the keywords to the screen directly.
 And when test a individual text file, the program will give back a text file with ten keywords that the algorithm forecast and their corresponding weights.
+
+Report file format:
+
+|number| m(Precision) |std(Precision)|m(Recall)|std(Recall)|m(F1)|std(F1) |m(loglikelihood)|std(loglikelihood)|m(Perplexity)|std(Perplexity)|result_record|
+|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+
+Last row:
+
+|number|suggest_number|answer_number|
+|:---|:---|:---|
 
 Part IX: Literature
 ==============

@@ -37,11 +37,11 @@ public class WordFeatureExtractor implements FeatureExtractor {
     Set<String> stopwords = null;
     int lang = -1;
     private Properties config = null;
-    private HashSet<String> tagPossibleSet = new HashSet<String>();
+    private HashSet<String> tagPossibleSet = new HashSet<>();
 
     public WordFeatureExtractor() {
 
-        stopwords = new HashSet<String>();
+        stopwords = new HashSet<>();
         stopwords.add("本书");
         stopwords.add("读者");
         stopwords.add("作者");
@@ -383,13 +383,10 @@ public class WordFeatureExtractor implements FeatureExtractor {
         if (useContent) {
             content += " " + p.getContent();
         }
-        content = LangUtils.removePunctuationMarks(content);
-        content = LangUtils.removeLineEnds(content);
-        content = LangUtils.removeExtraSpaces(content);
-        content = content.toLowerCase();
+        content = normalizeString(content);
         String[] words = ws.segment(content);
 
-        List<String> filtered = new LinkedList<String>();
+        List<String> filtered = new LinkedList<>();
         filterWord(words, filtered);
 
         return filtered.toArray(new String[filtered.size()]);
@@ -444,25 +441,24 @@ public class WordFeatureExtractor implements FeatureExtractor {
 
     public String[] extractKeyword(KeywordPost p, boolean containTitle,
                                    boolean containSummary, boolean containContent) {
-        String content = "";
-        if (containTitle)
-            content += p.getTitle();
-        if (containSummary)
-            content += " " + p.getSummary();
-        if (containContent)
-            content += " " + p.getContent();
+        String content = extractString(p, containTitle, containSummary, containContent);
 
+        content = normalizeString(content);
+        String[] words = ws.segment(content);
+
+        List<String> filtered = new LinkedList<>();
+        filterWord(words, filtered);
+
+        return filtered.toArray(new String[filtered.size()]);
+    }
+
+    private String normalizeString(String content) {
         content = LangUtils.removePunctuationMarks(content);
         content = LangUtils.removeLineEnds(content);
         content = LangUtils.removeExtraSpaces(content);
         content = LangUtils.removeEmptyLines(content);
         content = content.toLowerCase();
-        String[] words = ws.segment(content);
-
-        List<String> filtered = new LinkedList<String>();
-        filterWord(words, filtered);
-
-        return filtered.toArray(new String[filtered.size()]);
+        return content;
     }
 
     public String[] extractPostSegmented(Post p) {
@@ -474,11 +470,11 @@ public class WordFeatureExtractor implements FeatureExtractor {
 
         content = content.replaceAll("。", " ");
         String[] wordWithTagList = content.split(" ");
-        Vector<String> results = new Vector<String>();
+        Vector<String> results = new Vector<>();
         filterWordWithTag(wordWithTagList, results);
         String[] words = results.toArray(new String[0]);
 
-        List<String> filtered = new LinkedList<String>();
+        List<String> filtered = new LinkedList<>();
         filterWord(words, filtered);
 
         return filtered.toArray(new String[filtered.size()]);
@@ -499,21 +495,15 @@ public class WordFeatureExtractor implements FeatureExtractor {
 
     public String[] extractKeywordSegmented(KeywordPost p, boolean containTitle,
                                             boolean containSummary, boolean containContent) {
-        String content = "";
-        if (containTitle)
-            content += p.getTitle();
-        if (containSummary)
-            content += " " + p.getSummary();
-        if (containContent)
-            content += " " + p.getContent();
+        String content = extractString(p, containTitle, containSummary, containContent);
 
         content = content.replaceAll("。", " ");
         String[] wordWithTags = content.split(" ");
-        Vector<String> results = new Vector<String>();
+        Vector<String> results = new Vector<>();
         filterWordWithTag(wordWithTags, results);
         String[] words = results.toArray(new String[0]);
 
-        List<String> filtered = new LinkedList<String>();
+        List<String> filtered = new LinkedList<>();
         filterWord(words, filtered);
 
         return filtered.toArray(new String[filtered.size()]);
@@ -521,6 +511,21 @@ public class WordFeatureExtractor implements FeatureExtractor {
 
     public String[] extractKeywordLda(KeywordPost p, boolean containTitle,
                                       boolean containSummary, boolean containContent) {
+        String content = extractString(p, containTitle, containSummary, containContent);
+
+        content = content.replaceAll("。", " ");
+        String[] wordWithTags = content.split(" ");
+        Vector<String> results = new Vector<>();
+        filterWordWithTag2(wordWithTags, results);
+        String[] words = results.toArray(new String[0]);
+
+        List<String> filtered = new LinkedList<>();
+        filterWord(words, filtered);
+
+        return filtered.toArray(new String[filtered.size()]);
+    }
+
+    private String extractString(KeywordPost p, boolean containTitle, boolean containSummary, boolean containContent) {
         String content = "";
         if (containTitle)
             content += p.getTitle();
@@ -528,22 +533,11 @@ public class WordFeatureExtractor implements FeatureExtractor {
             content += " " + p.getSummary();
         if (containContent)
             content += " " + p.getContent();
-
-        content = content.replaceAll("。", " ");
-        String[] wordWithTags = content.split(" ");
-        Vector<String> results = new Vector<String>();
-        filterWordWithTag2(wordWithTags, results);
-        String[] words = results.toArray(new String[0]);
-
-        List<String> filtered = new LinkedList<String>();
-        filterWord(words, filtered);
-
-        return filtered.toArray(new String[filtered.size()]);
+        return content;
     }
 
     private void filterWordWithTag2(String[] wordWithTags, Vector<String> results) {
-        for (int i = 0; i < wordWithTags.length; i++) {
-            String wordWithTag = wordWithTags[i];
+        for (String wordWithTag : wordWithTags) {
             if (wordWithTag.equals("")) {
                 continue;
             }
@@ -566,24 +560,21 @@ public class WordFeatureExtractor implements FeatureExtractor {
 
         content = content.replaceAll("。", " ");
         String[] wordWithTags = content.split(" ");
-        Vector<String> results = new Vector<String>();
+        Vector<String> results = new Vector<>();
         filterWordWithTag2(wordWithTags, results);
         String[] words = results.toArray(new String[0]);
 
-        List<String> filtered = new LinkedList<String>();
+        List<String> filtered = new LinkedList<>();
         filterWord(words, filtered);
 
         return filtered.toArray(new String[filtered.size()]);
     }
 
     public String[] getWords(String content) {
-        content = LangUtils.removePunctuationMarks(content);
-        content = LangUtils.removeLineEnds(content);
-        content = LangUtils.removeExtraSpaces(content);
-        content = content.toLowerCase();
+        content = normalizeString(content);
         String[] words = ws.segment(content);
 
-        List<String> filtered = new LinkedList<String>();
+        List<String> filtered = new LinkedList<>();
         filterWord(words, filtered);
 
         return filtered.toArray(new String[filtered.size()]);
